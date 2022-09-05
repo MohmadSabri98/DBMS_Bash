@@ -1,0 +1,230 @@
+#!/bin/bash
+if [ $(ls ./DBs/$dbname | wc -l) == 0 ]
+then
+      echo -e "================================================================="
+      echo -e "${Red}No Table Found${clear}"
+      echo -e "================================================================="
+      source ./Connect-Menu.sh
+fi      
+
+re='^[0-9]+$'
+read -rp "Enter table Name you want to update: " tablename;
+while [[ -z $tablename ]] || [[ $tablename == *['!''@#/$\"*{^})(+_/|,;:~`.%&.=-]>[<?']* ]]
+do 
+    echo -e "${Red}Invalid Input${clear}🤡"
+    read -rp "PLease Enter Table Name Again:🧐" tablename
+done
+if [ $(cat ./DBs/$dbname/$tablename | wc -l) == 0 ]
+then
+      echo -e "================================================================="
+      echo -e "${Red}No Data exist to be updated in $tablename table Found${clear}"
+      echo -e "================================================================="
+      source ./Connect-Menu.sh
+fi   
+####################################################################3
+                            ###functions
+function checkexistwhereval(){
+numofcol=$1 
+whereval=$2
+
+
+
+
+
+zz=`cut -f $numofcol -d " " ./DBs/$dbname/$tablename|grep -w $whereval`
+
+if [[ -z $zz ]];then
+echo "false"
+else
+echo "true"
+fi
+}
+function checkcolnum(){
+rr=$1
+m=$(awk -F " " '{
+if(NR==1){	
+for(i=1;i<=NF;i++)
+{
+	if($i=="'$rr'")
+	{print i;break}
+	
+}
+}
+}' ./DBs/$dbname/$tablename.Type)
+if [[ $m != "" ]]
+then
+echo $m
+else 
+echo "false"
+fi
+}
+function checkcolname(){
+rr=$1
+m=$(awk -F " " '{
+if(NR==1){	
+for(i=1;i<=NF;i++)
+{
+	if($i=="'$rr'")
+	{print "true"}
+	else
+	{print false}
+	
+}
+}
+}' ./DBs/$dbname/$tablename.Type)
+if [[ $m == "" ]]
+then
+echo "false"
+else 
+echo "true"
+fi
+}
+####################################################################################
+                           ####START##########
+if [[ -f ./DBs/$dbname/$tablename ]]; then
+   read -rp "Enter column to be updated : " colupd
+	  x=$(checkcolname $colupd)
+  while  [[ $colupd =~ $re ]] || [[ -z $colupd ]] || [[ $colupd == *['!''@#/$\"*{^})(+_|,;:~`.%&/=-]>[<?']* ]] || [[ "$x" == "false" ]]
+           do
+              echo -e "${BBlue}Column must be string and not contained spaces or special charcters  *^%\/ and must be correct table name ${clear}"
+              read -rp "Enter column to be updated : " colupd
+			  x=$(checkcolname $colupd)
+            done
+ colupdnum=$(checkcolnum $colupd)           
+echo "colum $colupd its number is $colupdnum"
+##################################################################
+                     #second value
+read -rp "Enter the old value : " wherevl
+	zz=$(checkexistwhereval $colupdnum $wherevl)
+	datatype=$(tail -1 ./DBs/$dbname/$tablename.Type  | cut -f $colupdnum -d " ")
+	if [[ "$datatype" == "int" ]] 
+       then 
+           while ! [[ $wherevl =~ $re ]] || [[ "$zz" == "false" ]]
+           do
+             echo -e "${BBlue}old value must doesn'tOrColumn must be string and not contained spaces or special charcters *^%\/${clear}"
+             read -rp "Enter Value Of $(head -n 1 ./DBs/$dbname/$tablename.Type  | cut -f $colupdnum -d " ") column: " wherevl
+              zz=$(checkexistwhereval $colupdnum $wherevl)
+           done
+       fi 
+          if [[ "$datatype" == "string" ]] 
+       then 
+           while  [[ $wherevl =~ $re ]] || [[ -z $wherevl ]] || [[ $wherevl == *['!''@#/$\"*{^})(+_|,;:~`.%&/=-]>[<?']* ]] || [[ "$zz" == "false" ]]
+           do
+              echo -e "${BBlue}old value must doesn't OrColumn must be string and not contained spaces or special charcters *^%\/  ${clear}"
+              read -rp "Enter Value Of $(head -n 1 ./DBs/$dbname/$tablename.Type  | cut -f $colupdnum -d " ") column: " wherevl
+              zz=$(checkexistwhereval $colupdnum $wherevl)
+            done
+        fi
+#####################################################################
+                 #third value
+
+
+	read -p "Enter new value : " vl;
+	datatype=$(tail -1 ./DBs/$dbname/$tablename.Type  | cut -f $colupdnum -d " ")
+	if [[ "$datatype" == "int" ]] 
+       then 
+           while ! [[ $vl =~ $re ]]
+           do
+             echo -e "${BBlue}Column must be integer${clear}"
+             read -rp "Enter Value Of $(head -n 1 ./DBs/$dbname/$tablename.Type  | cut -f $colupdnum -d " ") column: " vl
+      
+           done
+       fi 
+          if [[ "$datatype" == "string" ]] 
+       then 
+           while  [[ $vl =~ $re ]] || [[ -z $vl ]] || [[ $vl == *['!''@#/$\"*{^})(+_|,;:~`.%&/=-]>[<?']* ]]
+           do
+              echo -e "${BBlue}Column must be string and not contained spaces or special charcters *^%\/  ${clear}"
+              read -rp "Enter Value Of $(head -n 1 ./DBs/$dbname/$tablename.Type  | cut -f $colupdnum -d " ") column: " vl
+        
+            done
+        fi
+  pkvalue=$(cut -f 1 -d " " ./DBs/$dbname/$tablename | grep -w $vl)
+        while [[ $pkvalue == $vl ]]&& [[ $colupdnum == 1 ]]
+        do 
+           echo -e "${Red}This Value is Already Exists (Pk)${clear}" 
+           echo -e "================================================================="
+           read -rp "Enter Value Of $(head -n 1 ./DBs/$dbname/$tablename.Type  | cut -f $colupdnum -d " ") column: " vl  
+        if [[ "$datatype" == "int" ]] 
+       then 
+    
+           while ! [[ $vl =~ $re ]]
+           do
+             echo -e "${BBlue}Column must be integer${clear}"
+             read -rp "Enter Value Of $(head -n 1 ./DBs/$dbname/$tablename.Type  | cut -f $colupdnum -d " ") column: " vl
+      
+           done
+       fi 
+          if [[ "$datatype" == "string" ]] 
+       then 
+           while  [[ $vl =~ $re ]] || [[ -z $vl ]] || [[ $vl == *['!''@#/$\"*{^})(+_|,;:~`.%&/=-]>[<?']* ]]
+           do
+              echo -e "${BBlue}Column must be string${clear}"
+              read -rp "Enter Value Of $(head -n 1 ./DBs/$dbname/$tablename.Type  | cut -f $colupdnum -d " ") column: " vl
+        
+            done
+        fi
+           pkvalue=$(cut -f 1 -d " " ./DBs/$dbname/$tablename | grep -w $vl)
+        done      
+	
+#####################################################3
+                #updated statment
+                 awk -F" " '{
+ 
+	
+
+      
+      if($(("'$colupdnum'"))=="'$wherevl'"){
+        $(("'$colupdnum'"))="'$vl'";
+   
+}
+
+    print $0
+    
+    
+    
+    }' ./DBs/$dbname/$tablename  > ./DBs/$dbname/tmp
+cp ./DBs/$dbname/tmp ./DBs/$dbname/$tablename
+rm -r ./DBs/$dbname/tmp
+source ./Connect-Menu.sh 
+####################################################################
+else
+	  echo -e "${Red} $tablename Table Not Exists${clear}"
+        echo -e "================================================================="
+        source ./Connect-Menu.sh
+fi
+
+
+
+
+
+
+
+
+
+
+
+
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
